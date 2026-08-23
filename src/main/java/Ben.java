@@ -5,10 +5,10 @@ import java.util.Scanner;
 /**
  * Entry point for Ben, a simple command-line chatbot.
  * <p>
- * Level-4 (ToDos, Events, Deadlines): tasks now come in three flavours —
- * {@link Todo}, {@link Deadline}, and {@link Event} — created via the
- * "todo", "deadline .../by ...", and "event .../from .../to ..." commands.
- * Dates and times are kept as plain strings for now (no parsing yet).
+ * Level-5 (Handle Errors): invalid input (unknown commands, missing
+ * descriptions, missing /by or /from//to, bad task numbers) now raises a
+ * {@link BenException} with a user-friendly message instead of crashing
+ * or silently doing the wrong thing.
  */
 public class Ben {
     private static final String LINE = "____________________________________________________________";
@@ -30,46 +30,82 @@ public class Ben {
             if (input.equals("bye")) {
                 printBoxed("Bye. Hope to see you again soon!");
                 break;
-            } else if (input.equals("list")) {
-                printBoxed(formatList(tasks));
-            } else if (input.startsWith("mark ")) {
-                printBoxed(setDone(tasks, input.substring("mark ".length()).trim(), true));
-            } else if (input.startsWith("unmark ")) {
-                printBoxed(setDone(tasks, input.substring("unmark ".length()).trim(), false));
-            } else if (input.equals("todo") || input.startsWith("todo ")) {
-                String description = input.length() > 4 ? input.substring(5).trim() : "";
-                printBoxed(addTask(tasks, new Todo(description)));
-            } else if (input.equals("deadline") || input.startsWith("deadline ")) {
-                printBoxed(addTask(tasks, parseDeadline(input)));
-            } else if (input.equals("event") || input.startsWith("event ")) {
-                printBoxed(addTask(tasks, parseEvent(input)));
-            } else {
-                printBoxed("OOPS!!! I'm not sure what that means yet.");
+            }
+            try {
+                printBoxed(handleCommand(input, tasks));
+            } catch (BenException e) {
+                printBoxed(e.getMessage());
             }
         }
         scanner.close();
     }
 
-    private static Deadline parseDeadline(String input) {
-        String rest = input.length() > 8 ? input.substring(9) : "";
-        String[] parts = rest.split(" /by ", 2);
-        String description = parts[0].trim();
-        String by = parts.length > 1 ? parts[1].trim() : "";
-        return new Deadline(description, by);
+    /**
+     * Dispatches a single (non-"bye") line of input to the right handler
+     * and returns the message to display. Throws {@link BenException} for
+     * any recognized-but-invalid or unrecognized command.
+     */
+    private static String handleCommand(String input, List<Task> tasks) throws BenException {
+        if (input.equals("list")) {
+            return formatList(tasks);
+        } else if (input.equals("mark") || input.startsWith("mark ")) {
+            String indexText = input.length() > 4 ? input.substring(5).trim() : "";
+            return setDone(tasks, indexText, true);
+        } else if (input.equals("unmark") || input.startsWith("unmark ")) {
+            String indexText = input.length() > 6 ? input.substring(7).trim() : "";
+            return setDone(tasks, indexText, false);
+        } else if (input.equals("todo") || input.startsWith("todo ")) {
+            String description = input.length() > 4 ? input.substring(5).trim() : "";
+            if (description.isEmpty()) {
+                throw new BenException("The description of a todo cannot be empty.");
+            }
+            return addTask(tasks, new Todo(description));
+        } else if (input.equals("deadline") || input.startsWith("deadline ")) {
+            return addTask(tasks, parseDeadline(input));
+        } else if (input.equals("event") || input.startsWith("event ")) {
+            return addTask(tasks, parseEvent(input));
+        } else {
+            throw new BenException("I'm sorry, but I don't know what that means :-(");
+        }
     }
 
-    private static Event parseEvent(String input) {
-        String rest = input.length() > 5 ? input.substring(6) : "";
+    private static Deadline parseDeadline(String input) throws BenException {
+        String rest = input.length() > 8 ? input.substring(9).trim() : "";
+        if (rest.isEmpty()) {
+            throw new BenException("The description of a deadline cannot be empty.");
+        }
+        String[] parts = rest.split(" /by ", 2);
+        String description = parts[0].trim();
+        if (description.isEmpty()) {
+            throw new BenException("The description of a deadline cannot be empty.");
+        }
+        if (parts.length < 2 || parts[1].trim().isEmpty()) {
+            throw new BenException("A deadline needs a \"/by\" date/time, e.g. \"deadline return book /by Sunday\".");
+        }
+        return new Deadline(description, parts[1].trim());
+    }
+
+    private static Event parseEvent(String input) throws BenException {
+        String rest = input.length() > 5 ? input.substring(6).trim() : "";
+        if (rest.isEmpty()) {
+            throw new BenException("The description of an event cannot be empty.");
+        }
         String[] fromSplit = rest.split(" /from ", 2);
         String description = fromSplit[0].trim();
-        String from = "";
-        String to = "";
-        if (fromSplit.length > 1) {
-            String[] toSplit = fromSplit[1].split(" /to ", 2);
-            from = toSplit[0].trim();
-            to = toSplit.length > 1 ? toSplit[1].trim() : "";
+        if (description.isEmpty()) {
+            throw new BenException("The description of an event cannot be empty.");
         }
-        return new Event(description, from, to);
+        if (fromSplit.length < 2 || fromSplit[1].trim().isEmpty()) {
+            throw new BenException(
+                    "An event needs a \"/from\" and \"/to\" time, e.g. \"event meeting /from Mon 2pm /to 4pm\".");
+        }
+        String[] toSplit = fromSplit[1].split(" /to ", 2);
+        String from = toSplit[0].trim();
+        if (from.isEmpty() || toSplit.length < 2 || toSplit[1].trim().isEmpty()) {
+            throw new BenException(
+                    "An event needs a \"/from\" and \"/to\" time, e.g. \"event meeting /from Mon 2pm /to 4pm\".");
+        }
+        return new Event(description, from, toSplit[1].trim());
     }
 
     /**
@@ -102,15 +138,16 @@ public class Ben {
      * Marks (or unmarks) the task at the given 1-based index (as text),
      * and returns the confirmation message to show the user.
      */
-    private static String setDone(List<Task> tasks, String indexText, boolean done) {
+    private static String setDone(List<Task> tasks, String indexText, boolean done) throws BenException {
+        String commandName = done ? "mark" : "unmark";
         int index;
         try {
             index = Integer.parseInt(indexText);
         } catch (NumberFormatException e) {
-            return "OOPS!!! that needs a task number, e.g. \"" + (done ? "mark" : "unmark") + " 2\".";
+            throw new BenException("\"" + commandName + "\" needs a task number, e.g. \"" + commandName + " 2\".");
         }
         if (index < 1 || index > tasks.size()) {
-            return "OOPS!!! There is no task number " + indexText + ".";
+            throw new BenException("There is no task number " + indexText + ".");
         }
         Task task = tasks.get(index - 1);
         if (done) {
@@ -132,6 +169,18 @@ public class Ben {
             System.out.println(" " + line);
         }
         System.out.println(LINE);
+    }
+
+    /**
+     * Exception type for anything Ben-specific that goes wrong while
+     * handling a command (bad input, missing arguments, and so on).
+     * The message is prefixed with "OOPS!!!" so it's ready to print
+     * as-is, matching the course spec's sample error messages.
+     */
+    private static class BenException extends Exception {
+        BenException(String message) {
+            super("OOPS!!! " + message);
+        }
     }
 
     /**
