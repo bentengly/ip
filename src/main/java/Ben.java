@@ -5,9 +5,12 @@ import java.util.Scanner;
 /**
  * Entry point for Ben, a simple command-line chatbot.
  * <p>
- * Level-6 (Delete): on top of Level-5's error handling, tasks can now be
- * removed with "delete &lt;index&gt;", which reports the removed task and
- * the new task count, the same way adding one does.
+ * A-Enums: command words are now represented by the {@link CommandWord}
+ * enum instead of a chain of string comparisons, so dispatching on the
+ * command is a type-checked switch rather than repeated
+ * {@code .equals}/{@code .startsWith} calls. (Task types stay as the
+ * {@link Task} class hierarchy from Level-4 — that's the better fit for
+ * type-specific behaviour than an enum would be.)
  */
 public class Ben {
     private static final String LINE = "____________________________________________________________";
@@ -40,43 +43,62 @@ public class Ben {
     }
 
     /**
+     * The recognized command keywords, used to dispatch each line of
+     * input via a {@code switch} instead of a chain of string checks.
+     */
+    private enum CommandWord {
+        LIST, MARK, UNMARK, DELETE, TODO, DEADLINE, EVENT, BYE, UNKNOWN;
+
+        /** Maps the first word of a line of input to a {@link CommandWord}. */
+        static CommandWord fromString(String word) {
+            try {
+                return CommandWord.valueOf(word.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return UNKNOWN;
+            }
+        }
+    }
+
+    /**
      * Dispatches a single (non-"bye") line of input to the right handler
      * and returns the message to display. Throws {@link BenException} for
      * any recognized-but-invalid or unrecognized command.
      */
     private static String handleCommand(String input, List<Task> tasks) throws BenException {
-        if (input.equals("list")) {
+        String[] split = input.split(" ", 2);
+        CommandWord command = CommandWord.fromString(split[0]);
+        String args = split.length > 1 ? split[1].trim() : "";
+
+        switch (command) {
+        case LIST:
             return formatList(tasks);
-        } else if (input.equals("mark") || input.startsWith("mark ")) {
-            String indexText = input.length() > 4 ? input.substring(5).trim() : "";
-            return setDone(tasks, indexText, true);
-        } else if (input.equals("unmark") || input.startsWith("unmark ")) {
-            String indexText = input.length() > 6 ? input.substring(7).trim() : "";
-            return setDone(tasks, indexText, false);
-        } else if (input.equals("delete") || input.startsWith("delete ")) {
-            String indexText = input.length() > 6 ? input.substring(7).trim() : "";
-            return deleteTask(tasks, indexText);
-        } else if (input.equals("todo") || input.startsWith("todo ")) {
-            String description = input.length() > 4 ? input.substring(5).trim() : "";
-            if (description.isEmpty()) {
+        case MARK:
+            return setDone(tasks, args, true);
+        case UNMARK:
+            return setDone(tasks, args, false);
+        case DELETE:
+            return deleteTask(tasks, args);
+        case TODO:
+            if (args.isEmpty()) {
                 throw new BenException("The description of a todo cannot be empty.");
             }
-            return addTask(tasks, new Todo(description));
-        } else if (input.equals("deadline") || input.startsWith("deadline ")) {
-            return addTask(tasks, parseDeadline(input));
-        } else if (input.equals("event") || input.startsWith("event ")) {
-            return addTask(tasks, parseEvent(input));
-        } else {
+            return addTask(tasks, new Todo(args));
+        case DEADLINE:
+            return addTask(tasks, parseDeadline(args));
+        case EVENT:
+            return addTask(tasks, parseEvent(args));
+        case BYE:
+        case UNKNOWN:
+        default:
             throw new BenException("I'm sorry, but I don't know what that means :-(");
         }
     }
 
-    private static Deadline parseDeadline(String input) throws BenException {
-        String rest = input.length() > 8 ? input.substring(9).trim() : "";
-        if (rest.isEmpty()) {
+    private static Deadline parseDeadline(String args) throws BenException {
+        if (args.isEmpty()) {
             throw new BenException("The description of a deadline cannot be empty.");
         }
-        String[] parts = rest.split(" /by ", 2);
+        String[] parts = args.split(" /by ", 2);
         String description = parts[0].trim();
         if (description.isEmpty()) {
             throw new BenException("The description of a deadline cannot be empty.");
@@ -87,12 +109,11 @@ public class Ben {
         return new Deadline(description, parts[1].trim());
     }
 
-    private static Event parseEvent(String input) throws BenException {
-        String rest = input.length() > 5 ? input.substring(6).trim() : "";
-        if (rest.isEmpty()) {
+    private static Event parseEvent(String args) throws BenException {
+        if (args.isEmpty()) {
             throw new BenException("The description of an event cannot be empty.");
         }
-        String[] fromSplit = rest.split(" /from ", 2);
+        String[] fromSplit = args.split(" /from ", 2);
         String description = fromSplit[0].trim();
         if (description.isEmpty()) {
             throw new BenException("The description of an event cannot be empty.");
