@@ -5,10 +5,9 @@ import java.util.Scanner;
 /**
  * Entry point for Ben, a simple command-line chatbot.
  * <p>
- * Level-5 (Handle Errors): invalid input (unknown commands, missing
- * descriptions, missing /by or /from//to, bad task numbers) now raises a
- * {@link BenException} with a user-friendly message instead of crashing
- * or silently doing the wrong thing.
+ * Level-6 (Delete): on top of Level-5's error handling, tasks can now be
+ * removed with "delete &lt;index&gt;", which reports the removed task and
+ * the new task count, the same way adding one does.
  */
 public class Ben {
     private static final String LINE = "____________________________________________________________";
@@ -54,6 +53,9 @@ public class Ben {
         } else if (input.equals("unmark") || input.startsWith("unmark ")) {
             String indexText = input.length() > 6 ? input.substring(7).trim() : "";
             return setDone(tasks, indexText, false);
+        } else if (input.equals("delete") || input.startsWith("delete ")) {
+            String indexText = input.length() > 6 ? input.substring(7).trim() : "";
+            return deleteTask(tasks, indexText);
         } else if (input.equals("todo") || input.startsWith("todo ")) {
             String description = input.length() > 4 ? input.substring(5).trim() : "";
             if (description.isEmpty()) {
@@ -140,6 +142,34 @@ public class Ben {
      */
     private static String setDone(List<Task> tasks, String indexText, boolean done) throws BenException {
         String commandName = done ? "mark" : "unmark";
+        Task task = tasks.get(resolveIndex(tasks, indexText, commandName) - 1);
+        if (done) {
+            task.markAsDone();
+            return "Nice! I've marked this task as done:\n  " + task;
+        } else {
+            task.markAsNotDone();
+            return "OK, I've marked this task as not done yet:\n  " + task;
+        }
+    }
+
+    /**
+     * Removes the task at the given 1-based index (as text) and returns
+     * the confirmation message: "Noted. I've removed this task: ... Now
+     * you have N tasks in the list."
+     */
+    private static String deleteTask(List<Task> tasks, String indexText) throws BenException {
+        int index = resolveIndex(tasks, indexText, "delete");
+        Task removed = tasks.remove(index - 1);
+        return "Noted. I've removed this task:\n  " + removed
+                + "\nNow you have " + tasks.size() + " task" + (tasks.size() == 1 ? "" : "s") + " in the list.";
+    }
+
+    /**
+     * Parses and validates a 1-based task index given as text, throwing a
+     * {@link BenException} with a message naming the offending command if
+     * it's missing, non-numeric, or out of range.
+     */
+    private static int resolveIndex(List<Task> tasks, String indexText, String commandName) throws BenException {
         int index;
         try {
             index = Integer.parseInt(indexText);
@@ -149,14 +179,7 @@ public class Ben {
         if (index < 1 || index > tasks.size()) {
             throw new BenException("There is no task number " + indexText + ".");
         }
-        Task task = tasks.get(index - 1);
-        if (done) {
-            task.markAsDone();
-            return "Nice! I've marked this task as done:\n  " + task;
-        } else {
-            task.markAsNotDone();
-            return "OK, I've marked this task as not done yet:\n  " + task;
-        }
+        return index;
     }
 
     /**
