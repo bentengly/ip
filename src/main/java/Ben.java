@@ -1,3 +1,6 @@
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -11,9 +14,20 @@ import java.util.Scanner;
  * {@code .equals}/{@code .startsWith} calls. (Task types stay as the
  * {@link Task} class hierarchy from Level-4 — that's the better fit for
  * type-specific behaviour than an enum would be.)
+ * <p>
+ * Level-7: the task list is now persisted to disk (see {@link Storage}).
+ * It is loaded once at start-up and saved again after every command that
+ * can change the list, so the data survives across runs.
  */
 public class Ben {
     private static final String LINE = "____________________________________________________________";
+
+    /**
+     * Relative path (from the project root) of the data file. Kept
+     * relative and built with {@link Path} so it behaves the same on any
+     * OS and on any machine the chatbot is copied to.
+     */
+    private static final String DATA_FILE = "data/ben.txt";
 
     public static void main(String[] args) {
         String logo = " ____              \n"
@@ -25,7 +39,16 @@ public class Ben {
 
         printBoxed("Hello! I'm Ben\nWhat can I do for you?");
 
-        List<Task> tasks = new ArrayList<>();
+        Storage storage = new Storage(DATA_FILE);
+        List<Task> tasks;
+        try {
+            tasks = storage.load();
+        } catch (BenException e) {
+            // Corrupted or unreadable data file: start empty rather than crash.
+            printBoxed(e.getMessage());
+            tasks = new ArrayList<>();
+        }
+
         Scanner scanner = new Scanner(System.in);
         while (true) {
             String input = scanner.nextLine();
@@ -34,7 +57,9 @@ public class Ben {
                 break;
             }
             try {
-                printBoxed(handleCommand(input, tasks));
+                String reply = handleCommand(input, tasks);
+                storage.save(tasks);
+                printBoxed(reply);
             } catch (BenException e) {
                 printBoxed(e.getMessage());
             }
@@ -257,6 +282,48 @@ public class Ben {
         /** One-letter tag identifying the task type: "T", "D", or "E". */
         abstract String getTypeIcon();
 
+        /**
+         * Renders this task as one line for the data file, using " | " as
+         * the field separator, e.g. {@code T | 1 | read book}. The second
+         * field is the done flag (1 = done, 0 = not done). Subclasses
+         * append their extra fields.
+         */
+        String serialize() {
+            return getTypeIcon() + " | " + (isDone ? "1" : "0") + " | " + description;
+        }
+
+        /**
+         * Rebuilds a task from one line produced by {@link #serialize()}.
+         *
+         * @throws BenException if the line does not match any known format
+         */
+        static Task deserialize(String line) throws BenException {
+            String[] parts = line.split(" \\| ");
+            try {
+                boolean done = parts[1].equals("1");
+                Task task;
+                switch (parts[0]) {
+                case "T":
+                    task = new Todo(parts[2]);
+                    break;
+                case "D":
+                    task = new Deadline(parts[2], parts[3]);
+                    break;
+                case "E":
+                    task = new Event(parts[2], parts[3], parts[4]);
+                    break;
+                default:
+                    throw new BenException("Skipping unrecognised saved task: " + line);
+                }
+                if (done) {
+                    task.markAsDone();
+                }
+                return task;
+            } catch (ArrayIndexOutOfBoundsException e) {
+                throw new BenException("Skipping corrupted saved task: " + line);
+            }
+        }
+
         @Override
         public String toString() {
             return "[" + getTypeIcon() + "][" + getStatusIcon() + "] " + description;
@@ -290,6 +357,11 @@ public class Ben {
         }
 
         @Override
+        String serialize() {
+            return super.serialize() + " | " + by;
+        }
+
+        @Override
         public String toString() {
             return super.toString() + " (by: " + by + ")";
         }
@@ -312,8 +384,83 @@ public class Ben {
         }
 
         @Override
+        String serialize() {
+            return super.serialize() + " | " + from + " | " + to;
+        }
+
+        @Override
         public String toString() {
             return super.toString() + " (from: " + from + " to: " + to + ")";
+        }
+    }
+
+    /**
+     * Reads and writes the task list to a plain-text file on disk.
+     * <p>
+     * The file is line-based: one {@link Task#serialize()} line per task.
+     * Missing file or missing parent folder are treated as "no tasks yet"
+     * (on load) or created on demand (on save), so the chatbot works on a
+     * fresh machine where nothing has been saved before.
+     */
+    private static class Storage {
+        private final Path file;
+
+        Storage(String relativePath) {
+            // Path.of splits on "/" and re-joins with the OS separator,
+            // so the same string works on Windows, macOS and Linux.
+            this.file = Path.of(relativePath);
+        }
+
+        /**
+         * Loads the saved tasks, or an empty list if the file does not
+         * exist yet. Individual corrupted lines are skipped with a warning
+         * printed to the console rather than aborting the whole load.
+         *
+         * @throws BenException if the file exists but cannot be read
+         */
+        List<Task> load() throws BenException {
+            List<Task> tasks = new ArrayList<>();
+            if (!Files.exists(file)) {
+                return tasks;
+            }
+            List<String> lines;
+            try {
+                lines = Files.readAllLines(file);
+            } catch (IOException e) {
+                throw new BenException("Could not read the save file (" + file + "). Starting with an empty list.");
+            }
+            for (String line : lines) {
+                if (line.isBlank()) {
+                    continue;
+                }
+                try {
+                    tasks.add(Task.deserialize(line.trim()));
+                } catch (BenException e) {
+                    System.out.println(e.getMessage());
+                }
+            }
+            return tasks;
+        }
+
+        /**
+         * Overwrites the data file with the current task list, creating
+         * the parent folder first if it is not there yet. A failure to
+         * save is reported to the console but does not stop the chatbot.
+         */
+        void save(List<Task> tasks) {
+            try {
+                Path parent = file.getParent();
+                if (parent != null) {
+                    Files.createDirectories(parent);
+                }
+                List<String> lines = new ArrayList<>();
+                for (Task task : tasks) {
+                    lines.add(task.serialize());
+                }
+                Files.write(file, lines);
+            } catch (IOException e) {
+                System.out.println("Warning: could not save tasks to " + file + " (" + e.getMessage() + ")");
+            }
         }
     }
 }
