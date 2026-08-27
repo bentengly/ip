@@ -1,3 +1,5 @@
+package ben;
+
 /**
  * Entry point for Ben, a simple command-line chatbot.
  * <p>

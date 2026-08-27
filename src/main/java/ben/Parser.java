@@ -1,3 +1,5 @@
+package ben;
+
 /**
  * Turns a raw line of user input into something the main loop can act on:
  * the {@link CommandWord}, its argument string, and (for the commands

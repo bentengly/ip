@@ -1,3 +1,5 @@
+package ben;
+
 /**
  * Exception type for anything Ben-specific that goes wrong while handling
  * a command (bad input, missing arguments, an unreadable save file, and
