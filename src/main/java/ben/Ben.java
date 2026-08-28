@@ -73,29 +73,29 @@ public class Ben {
         String args = Parser.args(input);
 
         switch (command) {
-        case LIST:
-            return formatList();
-        case MARK:
-            return setDone(args, true);
-        case UNMARK:
-            return setDone(args, false);
-        case DELETE:
-            return deleteTask(args);
-        case TODO:
-            if (args.isEmpty()) {
-                throw new BenException("The description of a todo cannot be empty.");
-            }
-            return addTask(new Todo(args));
-        case DEADLINE:
-            return addTask(Parser.parseDeadline(args));
-        case EVENT:
-            return addTask(Parser.parseEvent(args));
-        case FIND:
-            return findTasks(args);
-        case BYE:
-        case UNKNOWN:
-        default:
-            throw new BenException("I'm sorry, but I don't know what that means :-(");
+            case LIST:
+                return formatList();
+            case MARK:
+                return setDone(args, true);
+            case UNMARK:
+                return setDone(args, false);
+            case DELETE:
+                return deleteTask(args);
+            case TODO:
+                if (args.isEmpty()) {
+                    throw new BenException("The description of a todo cannot be empty.");
+                }
+                return addTask(new Todo(args));
+            case DEADLINE:
+                return addTask(Parser.parseDeadline(args));
+            case EVENT:
+                return addTask(Parser.parseEvent(args));
+            case FIND:
+                return findTasks(args);
+            case BYE:
+            case UNKNOWN:
+            default:
+                throw new BenException("I'm sorry, but I don't know what that means :-(");
         }
     }
 
@@ -148,10 +148,10 @@ public class Ben {
      * Marks (or unmarks) the task named by {@code indexText} and returns
      * the confirmation message to show the user.
      */
-    private String setDone(String indexText, boolean done) throws BenException {
-        String commandName = done ? "mark" : "unmark";
+    private String setDone(String indexText, boolean isDone) throws BenException {
+        String commandName = isDone ? "mark" : "unmark";
         Task task = tasks.get(Parser.parseIndex(indexText, commandName));
-        if (done) {
+        if (isDone) {
             task.markAsDone();
             return "Nice! I've marked this task as done:\n  " + task;
         } else {
