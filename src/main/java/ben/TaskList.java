@@ -25,6 +25,7 @@ class TaskList {
         this.tasks = new ArrayList<>(initialTasks);
     }
 
+    /** Appends a task to the end of the list. */
     void add(Task task) {
         tasks.add(task);
     }
@@ -47,10 +48,12 @@ class TaskList {
         return tasks.get(checkIndex(oneBasedIndex) - 1);
     }
 
+    /** Returns the number of tasks in the list. */
     int size() {
         return tasks.size();
     }
 
+    /** Returns whether the list has no tasks. */
     boolean isEmpty() {
         return tasks.isEmpty();
     }

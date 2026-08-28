@@ -15,22 +15,27 @@ abstract class Task {
         this.isDone = false;
     }
 
+    /** Marks this task as done. */
     void markAsDone() {
         isDone = true;
     }
 
+    /** Marks this task as not done. */
     void markAsNotDone() {
         isDone = false;
     }
 
+    /** Returns {@code "X"} if this task is done, or a single space otherwise. */
     String getStatusIcon() {
         return isDone ? "X" : " ";
     }
 
+    /** Returns whether this task has been marked done. */
     boolean isDone() {
         return isDone;
     }
 
+    /** Returns the task's description text (without any type or status markers). */
     String getDescription() {
         return description;
     }
