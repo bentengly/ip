@@ -32,6 +32,8 @@ public class Ben {
      * Builds a chatbot that persists its tasks to {@code filePath}. A
      * failure to load leaves the chatbot running with an empty list
      * rather than crashing.
+     *
+     * @param filePath relative path of the data file to load from and save to
      */
     public Ben(String filePath) {
         ui = new Ui();
@@ -171,6 +173,11 @@ public class Ben {
                 + "\nNow you have " + tasks.size() + " task" + (tasks.size() == 1 ? "" : "s") + " in the list.";
     }
 
+    /**
+     * Launches the chatbot with the default data file.
+     *
+     * @param args command-line arguments (unused)
+     */
     public static void main(String[] args) {
         new Ben(DATA_FILE).run();
     }
