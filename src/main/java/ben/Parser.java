@@ -39,7 +39,8 @@ class Parser {
             throw new BenException("The description of a deadline cannot be empty.");
         }
         if (parts.length < 2 || parts[1].trim().isEmpty()) {
-            throw new BenException("A deadline needs a \"/by\" date/time, e.g. \"deadline return book /by 2019-12-02\".");
+            throw new BenException("A deadline needs a \"/by\" date/time, "
+                    + "e.g. \"deadline return book /by 2019-12-02\".");
         }
         return new Deadline(description, parts[1].trim());
     }
