@@ -44,4 +44,15 @@ class TaskListTest {
         assertEquals("[T][ ] a", removed.toString());
         assertEquals(1, list.size());
     }
+
+    @Test
+    void find_matchesKeywordCaseInsensitivelyAndKeepsOrder() {
+        TaskList list = new TaskList();
+        list.add(new Todo("read book"));
+        list.add(new Todo("buy milk"));
+        list.add(new Todo("return Book to library"));
+        assertEquals(2, list.find("book").size());
+        assertEquals("[T][ ] read book", list.find("book").get(0).toString());
+        assertTrue(list.find("nonsense").isEmpty());
+    }
 }

@@ -8,7 +8,7 @@ package ben;
  * calls with a single type-checked switch.
  */
 enum CommandWord {
-    LIST, MARK, UNMARK, DELETE, TODO, DEADLINE, EVENT, BYE, UNKNOWN;
+    LIST, MARK, UNMARK, DELETE, TODO, DEADLINE, EVENT, FIND, BYE, UNKNOWN;
 
     /** Maps the first word of a line of input to a {@link CommandWord}. */
     static CommandWord fromString(String word) {

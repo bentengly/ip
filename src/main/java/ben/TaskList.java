@@ -60,6 +60,22 @@ class TaskList {
         return tasks;
     }
 
+    /**
+     * Returns the tasks whose description contains {@code keyword}, in
+     * their current order. Matching is case-insensitive. The returned list
+     * is a copy, so the caller cannot alter the task list through it.
+     */
+    List<Task> find(String keyword) {
+        String needle = keyword.toLowerCase();
+        List<Task> matches = new ArrayList<>();
+        for (Task task : tasks) {
+            if (task.getDescription().toLowerCase().contains(needle)) {
+                matches.add(task);
+            }
+        }
+        return matches;
+    }
+
     private int checkIndex(int oneBasedIndex) throws BenException {
         if (oneBasedIndex < 1 || oneBasedIndex > tasks.size()) {
             throw new BenException("There is no task number " + oneBasedIndex + ".");
