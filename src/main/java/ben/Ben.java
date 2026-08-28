@@ -1,5 +1,7 @@
 package ben;
 
+import java.util.List;
+
 /**
  * Entry point for Ben, a simple command-line chatbot.
  * <p>
@@ -88,6 +90,8 @@ public class Ben {
             return addTask(Parser.parseDeadline(args));
         case EVENT:
             return addTask(Parser.parseEvent(args));
+        case FIND:
+            return findTasks(args);
         case BYE:
         case UNKNOWN:
         default:
@@ -117,6 +121,25 @@ public class Ben {
         StringBuilder sb = new StringBuilder("Here are the tasks in your list:");
         for (int i = 0; i < tasks.size(); i++) {
             sb.append("\n").append(i + 1).append(".").append(tasks.asList().get(i));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Builds the listing of tasks whose description contains
+     * {@code keyword}, in the same numbered format as {@code list}.
+     */
+    private String findTasks(String keyword) throws BenException {
+        if (keyword.isEmpty()) {
+            throw new BenException("Tell me what to look for, e.g. \"find book\".");
+        }
+        List<Task> matches = tasks.find(keyword);
+        if (matches.isEmpty()) {
+            return "Here are the matching tasks in your list:\n(no matching tasks)";
+        }
+        StringBuilder sb = new StringBuilder("Here are the matching tasks in your list:");
+        for (int i = 0; i < matches.size(); i++) {
+            sb.append("\n").append(i + 1).append(".").append(matches.get(i));
         }
         return sb.toString();
     }
