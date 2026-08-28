@@ -1,3 +1,5 @@
+package ben;
+
 /**
  * The recognized command keywords, used to dispatch each line of input
  * via a {@code switch} instead of a chain of string checks.

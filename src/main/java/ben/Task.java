@@ -1,3 +1,5 @@
+package ben;
+
 /**
  * Base class for anything Ben is tracking: a description plus a
  * done/not-done status. Subclasses add their own extra fields (a

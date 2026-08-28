@@ -1,3 +1,5 @@
+package ben;
+
 /** A task that starts and ends at specific date/times. */
 class Event extends Task {
     private final String from;
