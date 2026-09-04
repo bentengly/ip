@@ -46,6 +46,40 @@ public class Ben {
         }
     }
 
+    /**
+     * Builds a chatbot that uses the default data file. Convenience
+     * constructor for the GUI (Level-10), which has no reason to choose a
+     * different path.
+     */
+    public Ben() {
+        this(DATA_FILE);
+    }
+
+    /**
+     * Produces Ben's reply to a single line of input, for the GUI.
+     * <p>
+     * Level-10: this is the GUI's counterpart to {@link #run()}. Instead
+     * of reading from and printing to the console, it takes one line and
+     * returns the text to display, so the JavaFX layer never has to know
+     * how a command is handled. Errors come back as their message text
+     * rather than as thrown exceptions.
+     *
+     * @param input one line of user input (the same strings {@code run} accepts)
+     * @return the message to show the user
+     */
+    public String getResponse(String input) {
+        if (input.equals("bye")) {
+            return "Bye. Hope to see you again soon!";
+        }
+        try {
+            String reply = handleCommand(input);
+            storage.save(tasks);
+            return reply;
+        } catch (BenException e) {
+            return e.getMessage();
+        }
+    }
+
     /** Runs the read-eval-print loop until the user types "bye". */
     public void run() {
         ui.showWelcome();
