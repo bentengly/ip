@@ -37,7 +37,9 @@ test {
 }
 
 application {
-    mainClass = 'ben.Ben'
+    // Level-10: the GUI is the app's front door now. Ben.main still runs
+    // the old console version for anyone who wants it.
+    mainClass = 'ben.Launcher'
 }
 
 jar {
