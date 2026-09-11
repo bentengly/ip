@@ -66,4 +66,8 @@ shadowJar {
 
 run {
     standardInput = System.in
+    // A-Assertions: JavaExec tasks disable assertions by default, unlike the
+    // "test" task (which Gradle already runs with them on). Turn them on
+    // here too so "gradle run" actually exercises the asserts below.
+    enableAssertions = true
 }

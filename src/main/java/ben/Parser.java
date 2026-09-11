@@ -22,6 +22,8 @@ class Parser {
     /** Returns everything after the first word, trimmed (empty if there is nothing). */
     static String args(String input) {
         String[] split = input.split(" ", 2);
+        // split(..., 2) can only ever produce 1 or 2 parts.
+        assert split.length == 1 || split.length == 2;
         return split.length > 1 ? split[1].trim() : "";
     }
 

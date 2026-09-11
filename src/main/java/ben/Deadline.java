@@ -33,6 +33,8 @@ class Deadline extends Task {
     Deadline(String description, String by) throws BenException {
         super(description);
         String[] parts = by.trim().split("\\s+", 2);
+        // split(..., 2) can only ever produce 1 or 2 parts.
+        assert parts.length == 1 || parts.length == 2;
         this.date = parseDate(parts[0], by);
         this.time = parts.length > 1 ? parseTime(parts[1], by) : null;
     }
