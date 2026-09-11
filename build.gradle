@@ -2,6 +2,10 @@ plugins {
     id 'java'
     id 'application'
     id 'com.gradleup.shadow' version '9.5.1'
+    // Declares JavaFX as a real Maven dependency (instead of relying on the
+    // JDK's bundled copy) so shadowJar can pack the JavaFX jars into ben.jar.
+    // That lets the release JAR run on any JDK, not just an FX-flavoured one.
+    id 'org.openjfx.javafxplugin' version '0.1.0'
 }
 
 java {
@@ -11,6 +15,13 @@ java {
 
 repositories {
     mavenCentral()
+}
+
+javafx {
+    version = '25.0.1'
+    // "controls" pulls in javafx.base and javafx.graphics transitively; the
+    // GUI (see Launcher/Main) does not use FXML, so that module is omitted.
+    modules = ['javafx.controls']
 }
 
 dependencies {
