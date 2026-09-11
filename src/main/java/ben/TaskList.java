@@ -2,6 +2,7 @@ package ben;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * The in-memory list of tasks, with the add / delete / lookup operations
@@ -71,13 +72,9 @@ class TaskList {
      */
     List<Task> find(String keyword) {
         String needle = keyword.toLowerCase();
-        List<Task> matches = new ArrayList<>();
-        for (Task task : tasks) {
-            if (task.getDescription().toLowerCase().contains(needle)) {
-                matches.add(task);
-            }
-        }
-        return matches;
+        return tasks.stream()
+                .filter(task -> task.getDescription().toLowerCase().contains(needle))
+                .collect(Collectors.toList());
     }
 
     private int checkIndex(int oneBasedIndex) throws BenException {
