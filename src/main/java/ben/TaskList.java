@@ -22,6 +22,7 @@ class TaskList {
 
     /** Creates a list pre-populated with the given tasks (e.g. loaded from disk). */
     TaskList(List<Task> initialTasks) {
+        assert initialTasks != null : "initialTasks must not be null; pass an empty list instead";
         this.tasks = new ArrayList<>(initialTasks);
     }
 
@@ -83,6 +84,9 @@ class TaskList {
         if (oneBasedIndex < 1 || oneBasedIndex > tasks.size()) {
             throw new BenException("There is no task number " + oneBasedIndex + ".");
         }
+        // Postcondition: callers rely on the returned index being safe to use
+        // as tasks.get(result - 1) / tasks.remove(result - 1) right after.
+        assert oneBasedIndex >= 1 && oneBasedIndex <= tasks.size();
         return oneBasedIndex;
     }
 }

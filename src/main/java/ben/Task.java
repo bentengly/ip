@@ -76,6 +76,10 @@ abstract class Task {
                 default:
                     throw new BenException("Skipping unrecognised saved task: " + line);
             }
+            // Every branch above either assigns task or throws; this just
+            // documents that invariant so a future case added without an
+            // assignment fails loudly instead of NPE-ing below.
+            assert task != null : "task should have been assigned by the switch above";
             if (isDone) {
                 task.markAsDone();
             }
