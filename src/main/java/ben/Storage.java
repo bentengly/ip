@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Reads and writes the task list to a plain-text file on disk.
@@ -65,10 +66,9 @@ class Storage {
             if (parent != null) {
                 Files.createDirectories(parent);
             }
-            List<String> lines = new ArrayList<>();
-            for (Task task : tasks.asList()) {
-                lines.add(task.serialize());
-            }
+            List<String> lines = tasks.asList().stream()
+                    .map(Task::serialize)
+                    .collect(Collectors.toList());
             Files.write(file, lines);
         } catch (IOException e) {
             System.out.println("Warning: could not save tasks to " + file + " (" + e.getMessage() + ")");
