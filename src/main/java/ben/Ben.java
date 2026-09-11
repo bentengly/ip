@@ -142,8 +142,7 @@ public class Ben {
      */
     private String addTask(Task task) {
         tasks.add(task);
-        return "Got it. I've added this task:\n  " + task
-                + "\nNow you have " + tasks.size() + " task" + (tasks.size() == 1 ? "" : "s") + " in the list.";
+        return "Got it. I've added this task:\n  " + task + "\n" + taskCountLine();
     }
 
     /**
@@ -151,14 +150,7 @@ public class Ben {
      * "Here are the tasks in your list:\n1.[T][X] read book".
      */
     private String formatList() {
-        if (tasks.isEmpty()) {
-            return "Here are the tasks in your list:\n(no tasks yet)";
-        }
-        StringBuilder sb = new StringBuilder("Here are the tasks in your list:");
-        for (int i = 0; i < tasks.size(); i++) {
-            sb.append("\n").append(i + 1).append(".").append(tasks.asList().get(i));
-        }
-        return sb.toString();
+        return formatNumberedList("Here are the tasks in your list:", tasks.asList(), "(no tasks yet)");
     }
 
     /**
@@ -170,12 +162,22 @@ public class Ben {
             throw new BenException("Tell me what to look for, e.g. \"find book\".");
         }
         List<Task> matches = tasks.find(keyword);
-        if (matches.isEmpty()) {
-            return "Here are the matching tasks in your list:\n(no matching tasks)";
+        return formatNumberedList("Here are the matching tasks in your list:", matches, "(no matching tasks)");
+    }
+
+    /**
+     * Builds a numbered listing of {@code items}, one per line under
+     * {@code header}, or {@code header} followed by {@code emptyMessage} if
+     * there are none. Shared by {@link #formatList()} and
+     * {@link #findTasks(String)}, which only differ in which tasks they list.
+     */
+    private String formatNumberedList(String header, List<Task> items, String emptyMessage) {
+        if (items.isEmpty()) {
+            return header + "\n" + emptyMessage;
         }
-        StringBuilder sb = new StringBuilder("Here are the matching tasks in your list:");
-        for (int i = 0; i < matches.size(); i++) {
-            sb.append("\n").append(i + 1).append(".").append(matches.get(i));
+        StringBuilder sb = new StringBuilder(header);
+        for (int i = 0; i < items.size(); i++) {
+            sb.append("\n").append(i + 1).append(".").append(items.get(i));
         }
         return sb.toString();
     }
@@ -203,8 +205,17 @@ public class Ben {
      */
     private String deleteTask(String indexText) throws BenException {
         Task removed = tasks.remove(Parser.parseIndex(indexText, "delete"));
-        return "Noted. I've removed this task:\n  " + removed
-                + "\nNow you have " + tasks.size() + " task" + (tasks.size() == 1 ? "" : "s") + " in the list.";
+        return "Noted. I've removed this task:\n  " + removed + "\n" + taskCountLine();
+    }
+
+    /**
+     * Returns "Now you have N task(s) in the list.", pluralised to match the
+     * current size of {@link #tasks}. Shared by {@link #addTask(Task)} and
+     * {@link #deleteTask(String)}, the two commands that report the new count.
+     */
+    private String taskCountLine() {
+        int size = tasks.size();
+        return "Now you have " + size + " task" + (size == 1 ? "" : "s") + " in the list.";
     }
 
     /**

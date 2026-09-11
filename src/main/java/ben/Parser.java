@@ -50,6 +50,9 @@ class Parser {
      * command, e.g. {@code meeting /from Mon 2pm /to 4pm}.
      */
     static Event parseEvent(String args) throws BenException {
+        final String needsFromTo =
+                "An event needs a \"/from\" and \"/to\" time, e.g. \"event meeting /from Mon 2pm /to 4pm\".";
+
         if (args.isEmpty()) {
             throw new BenException("The description of an event cannot be empty.");
         }
@@ -59,14 +62,12 @@ class Parser {
             throw new BenException("The description of an event cannot be empty.");
         }
         if (fromSplit.length < 2 || fromSplit[1].trim().isEmpty()) {
-            throw new BenException(
-                    "An event needs a \"/from\" and \"/to\" time, e.g. \"event meeting /from Mon 2pm /to 4pm\".");
+            throw new BenException(needsFromTo);
         }
         String[] toSplit = fromSplit[1].split(" /to ", 2);
         String from = toSplit[0].trim();
         if (from.isEmpty() || toSplit.length < 2 || toSplit[1].trim().isEmpty()) {
-            throw new BenException(
-                    "An event needs a \"/from\" and \"/to\" time, e.g. \"event meeting /from Mon 2pm /to 4pm\".");
+            throw new BenException(needsFromTo);
         }
         return new Event(description, from, toSplit[1].trim());
     }
