@@ -66,16 +66,16 @@ class Deadline extends Task {
     }
 
     @Override
-    String serialize() {
+    String extraFields() {
         // Store in a form the constructor above can read straight back.
         String saved = date.toString() + (time != null ? " " + time.format(TIME_INPUT) : "");
-        return super.serialize() + " | " + saved;
+        return " | " + saved;
     }
 
     @Override
-    public String toString() {
+    String extraInfo() {
         String shown = date.format(DATE_DISPLAY)
                 + (time != null ? ", " + time.format(TIME_DISPLAY) : "");
-        return super.toString() + " (by: " + shown + ")";
+        return " (by: " + shown + ")";
     }
 }

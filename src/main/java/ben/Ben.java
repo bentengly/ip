@@ -117,17 +117,21 @@ public class Ben {
                 return setDone(args, false);
             case DELETE:
                 return deleteTask(args);
-            case TODO:
-                if (args.isEmpty()) {
+            case TODO: {
+                String description = Parser.stripTags(args);
+                if (description.isEmpty()) {
                     throw new BenException("The description of a todo cannot be empty.");
                 }
-                return addTask(new Todo(args));
+                return addTask(withTags(new Todo(description), args));
+            }
             case DEADLINE:
-                return addTask(Parser.parseDeadline(args));
+                return addTask(withTags(Parser.parseDeadline(Parser.stripTags(args)), args));
             case EVENT:
-                return addTask(Parser.parseEvent(args));
+                return addTask(withTags(Parser.parseEvent(Parser.stripTags(args)), args));
             case FIND:
                 return findTasks(args);
+            case TAG:
+                return tagTask(args);
             case BYE:
             case UNKNOWN:
             default:
@@ -143,6 +147,36 @@ public class Ben {
     private String addTask(Task task) {
         tasks.add(task);
         return "Got it. I've added this task:\n  " + task + "\n" + taskCountLine();
+    }
+
+    /**
+     * C-Tagging: adds every "#tag" token found in {@code rawArgs} (the
+     * command's original, not-yet-tag-stripped arguments) to {@code task}.
+     * Returns {@code task} so it can be chained straight into
+     * {@link #addTask(Task)}, e.g. {@code addTask(withTags(new Todo(...), args))}.
+     */
+    private Task withTags(Task task, String rawArgs) {
+        for (String tag : Parser.extractTags(rawArgs)) {
+            task.addTag(tag);
+        }
+        return task;
+    }
+
+    /**
+     * C-Tagging: adds tags to an already-added task. {@code args} is a task
+     * number followed by one or more tag names, each with or without a
+     * leading '#', e.g. {@code "2 urgent #errand"}.
+     */
+    private String tagTask(String args) throws BenException {
+        String[] split = args.split(" ", 2);
+        Task task = tasks.get(Parser.parseIndex(split[0], "tag"));
+        if (split.length < 2 || split[1].trim().isEmpty()) {
+            throw new BenException("Tell me what to tag it with, e.g. \"tag 2 urgent\".");
+        }
+        for (String word : split[1].trim().split("\\s+")) {
+            task.addTag(word.startsWith("#") ? word.substring(1) : word);
+        }
+        return "Got it. I've tagged this task:\n  " + task;
     }
 
     /**
