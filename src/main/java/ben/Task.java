@@ -1,14 +1,26 @@
 package ben;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 /**
  * Base class for anything Ben is tracking: a description plus a
  * done/not-done status. Subclasses add their own extra fields (a
  * deadline's "by" date, an event's "from"/"to" times) and override
  * {@link #getTypeIcon()} to identify themselves in the list.
+ * <p>
+ * C-Tagging: a task may also carry free-form tags (e.g. {@code #urgent}),
+ * shown at the end of its display line and persisted as a trailing field.
+ * {@link #toString()} and {@link #serialize()} are template methods:
+ * subclasses customise them via {@link #extraInfo()} and
+ * {@link #extraFields()} instead of overriding them directly, which keeps
+ * "where do tags go" (the very end) in one place regardless of task type.
  */
 abstract class Task {
     private final String description;
     private boolean isDone;
+    /** Insertion-ordered so tags display in the order the user added them; no duplicates. */
+    private final Set<String> tags = new LinkedHashSet<>();
 
     Task(String description) {
         this.description = description;
@@ -40,17 +52,45 @@ abstract class Task {
         return description;
     }
 
+    /** Adds a tag (without the leading '#') to this task; adding the same tag twice has no extra effect. */
+    void addTag(String tag) {
+        tags.add(tag);
+    }
+
+    /** Returns this task's tags (without '#'), in the order they were added. */
+    Set<String> getTags() {
+        return tags;
+    }
+
     /** One-letter tag identifying the task type: "T", "D", or "E". */
     abstract String getTypeIcon();
 
     /**
-     * Renders this task as one line for the data file, using " | " as the
-     * field separator, e.g. {@code T | 1 | read book}. The second field is
-     * the done flag (1 = done, 0 = not done). Subclasses append their
-     * extra fields.
+     * Extra text a subclass wants shown after the description, e.g. a
+     * deadline's {@code " (by: ...)"}. Empty for task types with none.
      */
-    String serialize() {
-        return getTypeIcon() + " | " + (isDone ? "1" : "0") + " | " + description;
+    String extraInfo() {
+        return "";
+    }
+
+    /**
+     * Extra " | "-separated fields a subclass wants saved after the base
+     * "type | done | description" fields, e.g. a deadline's date. Empty for
+     * task types with none.
+     */
+    String extraFields() {
+        return "";
+    }
+
+    /**
+     * Renders this task as one line for the data file: the base fields,
+     * then any subclass fields, then a trailing tags field if there are any
+     * (comma-separated, e.g. {@code | urgent,errand}).
+     */
+    final String serialize() {
+        String base = getTypeIcon() + " | " + (isDone ? "1" : "0") + " | " + description;
+        String tagsField = tags.isEmpty() ? "" : " | " + String.join(",", tags);
+        return base + extraFields() + tagsField;
     }
 
     /**
@@ -66,12 +106,15 @@ abstract class Task {
             switch (parts[0]) {
                 case "T":
                     task = new Todo(parts[2]);
+                    applyTagsIfPresent(task, parts, 3);
                     break;
                 case "D":
                     task = new Deadline(parts[2], parts[3]);
+                    applyTagsIfPresent(task, parts, 4);
                     break;
                 case "E":
                     task = new Event(parts[2], parts[3], parts[4]);
+                    applyTagsIfPresent(task, parts, 5);
                     break;
                 default:
                     throw new BenException("Skipping unrecognised saved task: " + line);
@@ -89,8 +132,22 @@ abstract class Task {
         }
     }
 
+    /**
+     * Adds the tags saved at {@code parts[tagsIndex]} to {@code task}, if
+     * that field is present. Older save files (from before C-Tagging) have
+     * no such field, so its absence is not an error.
+     */
+    private static void applyTagsIfPresent(Task task, String[] parts, int tagsIndex) {
+        if (parts.length > tagsIndex && !parts[tagsIndex].isBlank()) {
+            for (String tag : parts[tagsIndex].split(",")) {
+                task.addTag(tag);
+            }
+        }
+    }
+
     @Override
-    public String toString() {
-        return "[" + getTypeIcon() + "][" + getStatusIcon() + "] " + description;
+    public final String toString() {
+        String tagsSuffix = tags.isEmpty() ? "" : " #" + String.join(" #", tags);
+        return "[" + getTypeIcon() + "][" + getStatusIcon() + "] " + description + extraInfo() + tagsSuffix;
     }
 }

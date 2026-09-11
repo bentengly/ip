@@ -17,12 +17,12 @@ class Event extends Task {
     }
 
     @Override
-    String serialize() {
-        return super.serialize() + " | " + from + " | " + to;
+    String extraFields() {
+        return " | " + from + " | " + to;
     }
 
     @Override
-    public String toString() {
-        return super.toString() + " (from: " + from + " to: " + to + ")";
+    String extraInfo() {
+        return " (from: " + from + " to: " + to + ")";
     }
 }

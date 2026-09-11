@@ -1,5 +1,10 @@
 package ben;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Turns a raw line of user input into something the main loop can act on:
  * the {@link CommandWord}, its argument string, and (for the commands
@@ -10,6 +15,9 @@ package ben;
  * parser has no state of its own.
  */
 class Parser {
+    /** C-Tagging: matches a "#tagname" token anywhere in a line of input. */
+    private static final Pattern TAG_TOKEN = Pattern.compile("#(\\S+)");
+
     private Parser() {
         // Utility class: not meant to be instantiated.
     }
@@ -72,6 +80,29 @@ class Parser {
             throw new BenException(needsFromTo);
         }
         return new Event(description, from, toSplit[1].trim());
+    }
+
+    /**
+     * Returns the tags (without '#') found anywhere in {@code text}, in the
+     * order they appear, lower-cased. Used to pull "#urgent"-style tokens
+     * out of a todo/deadline/event's raw arguments when it is first created.
+     */
+    static List<String> extractTags(String text) {
+        List<String> tags = new ArrayList<>();
+        Matcher matcher = TAG_TOKEN.matcher(text);
+        while (matcher.find()) {
+            tags.add(matcher.group(1).toLowerCase());
+        }
+        return tags;
+    }
+
+    /**
+     * Returns {@code text} with every "#tag" token removed and the
+     * surrounding whitespace collapsed, so the remaining text can be handed
+     * to the existing todo/deadline/event parsing unchanged.
+     */
+    static String stripTags(String text) {
+        return TAG_TOKEN.matcher(text).replaceAll("").trim().replaceAll("\\s+", " ");
     }
 
     /**
