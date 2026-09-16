@@ -10,13 +10,29 @@ import org.junit.jupiter.api.Test;
 /** Tests for {@link TaskList}, focusing on 1-based indexing and range checks. */
 class TaskListTest {
     @Test
-    void addAndSize_trackTheNumberOfTasks() {
+    void addAndSize_trackTheNumberOfTasks() throws BenException {
         TaskList list = new TaskList();
         assertTrue(list.isEmpty());
         list.add(new Todo("a"));
         list.add(new Todo("b"));
         assertEquals(2, list.size());
         assertFalse(list.isEmpty());
+    }
+
+    @Test
+    void add_exactDuplicateTask_throwsBenException() throws BenException {
+        TaskList list = new TaskList();
+        list.add(new Todo("read book"));
+        assertThrows(BenException.class, () -> list.add(new Todo("Read Book")));
+        assertEquals(1, list.size());
+    }
+
+    @Test
+    void add_sameDescriptionDifferentType_isNotADuplicate() throws BenException {
+        TaskList list = new TaskList();
+        list.add(new Todo("read book"));
+        list.add(new Deadline("read book", "2019-12-02"));
+        assertEquals(2, list.size());
     }
 
     @Test
@@ -28,7 +44,7 @@ class TaskListTest {
     }
 
     @Test
-    void get_indexOutOfRange_throwsBenException() {
+    void get_indexOutOfRange_throwsBenException() throws BenException {
         TaskList list = new TaskList();
         list.add(new Todo("only"));
         assertThrows(BenException.class, () -> list.get(0));
@@ -46,7 +62,7 @@ class TaskListTest {
     }
 
     @Test
-    void find_matchesKeywordCaseInsensitivelyAndKeepsOrder() {
+    void find_matchesKeywordCaseInsensitivelyAndKeepsOrder() throws BenException {
         TaskList list = new TaskList();
         list.add(new Todo("read book"));
         list.add(new Todo("buy milk"));

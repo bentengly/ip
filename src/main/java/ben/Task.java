@@ -62,6 +62,22 @@ abstract class Task {
         return tags;
     }
 
+    /**
+     * Returns whether this task and {@code other} would look identical to
+     * the user: same task type, same description (case-insensitive) and
+     * the same subclass fields (e.g. the same deadline date, or the same
+     * event from/to). Done-status and tags are ignored, since two tasks
+     * differing only in those are not "the same task" typed in twice.
+     * <p>
+     * A-MoreErrorHandling: used to reject an exact-duplicate task instead
+     * of silently accepting the same thing twice.
+     */
+    final boolean isDuplicateOf(Task other) {
+        return getClass() == other.getClass()
+                && description.strip().equalsIgnoreCase(other.description.strip())
+                && extraFields().equalsIgnoreCase(other.extraFields());
+    }
+
     /** One-letter tag identifying the task type: "T", "D", or "E". */
     abstract String getTypeIcon();
 

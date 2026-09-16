@@ -22,14 +22,21 @@ class Parser {
         // Utility class: not meant to be instantiated.
     }
 
-    /** Returns the command keyword of the given line (UNKNOWN if unrecognised). */
+    /**
+     * Returns the command keyword of the given line (UNKNOWN if unrecognised
+     * or if the line is blank).
+     * <p>
+     * A-MoreErrorHandling: the line is trimmed before splitting, so leading
+     * whitespace (e.g. {@code "  list"}) still resolves to the intended
+     * command instead of an empty first token.
+     */
     static CommandWord commandWord(String input) {
-        return CommandWord.fromString(input.split(" ", 2)[0]);
+        return CommandWord.fromString(input.trim().split(" ", 2)[0]);
     }
 
     /** Returns everything after the first word, trimmed (empty if there is nothing). */
     static String args(String input) {
-        String[] split = input.split(" ", 2);
+        String[] split = input.trim().split(" ", 2);
         // split(..., 2) can only ever produce 1 or 2 parts.
         assert split.length == 1 || split.length == 2;
         return split.length > 1 ? split[1].trim() : "";

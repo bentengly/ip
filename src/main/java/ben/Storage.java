@@ -57,10 +57,16 @@ class Storage {
 
     /**
      * Overwrites the data file with the current task list, creating the
-     * parent folder first if it is not there yet. A failure to save is
-     * reported to the console but does not stop the chatbot.
+     * parent folder first if it is not there yet.
+     * <p>
+     * A-MoreErrorHandling: a failure (e.g. the folder is not writable, or
+     * disk space ran out) is reported back to the caller instead of just
+     * being printed to the console, so the GUI user actually sees it
+     * rather than the command silently appearing to succeed.
+     *
+     * @throws BenException if the file could not be written
      */
-    void save(TaskList tasks) {
+    void save(TaskList tasks) throws BenException {
         try {
             Path parent = file.getParent();
             if (parent != null) {
@@ -71,7 +77,7 @@ class Storage {
                     .collect(Collectors.toList());
             Files.write(file, lines);
         } catch (IOException e) {
-            System.out.println("Warning: could not save tasks to " + file + " (" + e.getMessage() + ")");
+            throw new BenException("Could not save tasks to " + file + " (" + e.getMessage() + ")");
         }
     }
 }
