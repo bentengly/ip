@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 
 /**
  * A task that needs to be done before a specific date (and, optionally, a
@@ -17,10 +18,19 @@ import java.time.format.DateTimeParseException;
  * time, e.g. {@code 2019-12-02 1800}.
  */
 class Deadline extends Task {
-    /** Date formats accepted from the user / data file, tried in order. */
+    /**
+     * Date formats accepted from the user / data file, tried in order.
+     * <p>
+     * A-MoreErrorHandling: parsed with {@link ResolverStyle#STRICT} rather
+     * than the (default) smart resolver, so a non-existent calendar date
+     * such as {@code 2019-2-30} is rejected instead of silently rolling
+     * over to Feb 28. The year field uses {@code uuuu} (year-of-era-free
+     * "proleptic year") rather than {@code yyyy}: under STRICT, {@code yyyy}
+     * requires an era field to resolve and would reject every date.
+     */
     private static final DateTimeFormatter[] DATE_INPUTS = {
-        DateTimeFormatter.ofPattern("yyyy-M-d"),
-        DateTimeFormatter.ofPattern("d/M/yyyy"),
+        DateTimeFormatter.ofPattern("uuuu-M-d").withResolverStyle(ResolverStyle.STRICT),
+        DateTimeFormatter.ofPattern("d/M/uuuu").withResolverStyle(ResolverStyle.STRICT),
     };
     private static final DateTimeFormatter TIME_INPUT = DateTimeFormatter.ofPattern("HHmm");
     private static final DateTimeFormatter DATE_DISPLAY = DateTimeFormatter.ofPattern("MMM d yyyy");

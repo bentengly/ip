@@ -39,6 +39,13 @@ class DeadlineTest {
     }
 
     @Test
+    void constructor_nonExistentCalendarDate_throwsBenException() {
+        // Feb 30 does not exist; a lenient (smart) resolver would silently
+        // roll this over to Feb 28 instead of rejecting it.
+        assertThrows(BenException.class, () -> new Deadline("x", "2019-2-30"));
+    }
+
+    @Test
     void serialize_roundTripsThroughDeserialize() throws BenException {
         Deadline original = new Deadline("submit report", "2019-12-02 0930");
         String line = original.serialize();

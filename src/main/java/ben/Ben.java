@@ -72,9 +72,7 @@ public class Ben {
             return "Bye. Hope to see you again soon!";
         }
         try {
-            String reply = handleCommand(input);
-            storage.save(tasks);
-            return reply;
+            return handleCommand(input) + saveAndGetWarning();
         } catch (BenException e) {
             return e.getMessage();
         }
@@ -90,14 +88,31 @@ public class Ben {
                 break;
             }
             try {
-                String reply = handleCommand(input);
-                storage.save(tasks);
-                ui.show(reply);
+                ui.show(handleCommand(input) + saveAndGetWarning());
             } catch (BenException e) {
                 ui.showError(e.getMessage());
             }
         }
         ui.close();
+    }
+
+    /**
+     * Saves the task list, returning a warning line to append to the
+     * command's reply if the save failed (empty string if it succeeded).
+     * <p>
+     * A-MoreErrorHandling: kept separate from the command's own
+     * {@link BenException} handling, since a command (e.g. "todo") can
+     * succeed in memory even when persisting the updated list to disk
+     * fails (missing permissions, full disk, ...) &ndash; the user should
+     * still see their command went through, plus the warning.
+     */
+    private String saveAndGetWarning() {
+        try {
+            storage.save(tasks);
+            return "";
+        } catch (BenException e) {
+            return "\n" + e.getMessage();
+        }
     }
 
     /**
@@ -144,7 +159,7 @@ public class Ben {
      * message: "Got it. I've added this task: ... Now you have N tasks in
      * the list."
      */
-    private String addTask(Task task) {
+    private String addTask(Task task) throws BenException {
         tasks.add(task);
         return "Got it. I've added this task:\n  " + task + "\n" + taskCountLine();
     }

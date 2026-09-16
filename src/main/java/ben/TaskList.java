@@ -27,8 +27,16 @@ class TaskList {
         this.tasks = new ArrayList<>(initialTasks);
     }
 
-    /** Appends a task to the end of the list. */
-    void add(Task task) {
+    /**
+     * Appends a task to the end of the list.
+     *
+     * @throws BenException if an identical task (same type, description and
+     *     date/time fields) is already in the list
+     */
+    void add(Task task) throws BenException {
+        if (tasks.stream().anyMatch(task::isDuplicateOf)) {
+            throw new BenException("This task is already in your list:\n  " + task);
+        }
         tasks.add(task);
     }
 

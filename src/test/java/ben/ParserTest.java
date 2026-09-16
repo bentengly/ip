@@ -19,9 +19,19 @@ class ParserTest {
     }
 
     @Test
+    void commandWord_leadingWhitespace_stillRecognised() {
+        assertEquals(CommandWord.LIST, Parser.commandWord("   list"));
+    }
+
+    @Test
     void args_noArgumentsAfterKeyword_returnsEmptyString() {
         assertEquals("", Parser.args("list"));
         assertEquals("read book", Parser.args("todo read book"));
+    }
+
+    @Test
+    void args_leadingWhitespaceBeforeKeyword_stillReturnsArgs() {
+        assertEquals("read book", Parser.args("  todo read book"));
     }
 
     @Test
@@ -49,6 +59,11 @@ class ParserTest {
     @Test
     void parseEvent_missingToClause_throwsBenException() {
         assertThrows(BenException.class, () -> Parser.parseEvent("meeting /from Mon 2pm"));
+    }
+
+    @Test
+    void parseEvent_sameFromAndTo_throwsBenException() {
+        assertThrows(BenException.class, () -> Parser.parseEvent("meeting /from Mon 2pm /to Mon 2pm"));
     }
 
     @Test
